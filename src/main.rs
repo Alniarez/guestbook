@@ -18,10 +18,19 @@ struct Entry {
     created_at: u64,
 }
 
+fn log(msg: &str) {
+    println!("[{}] {}", now(), msg);
+}
+
 fn main() {
     let server = Server::http("0.0.0.0:50007").unwrap();
+    log("Server started on port 50007");
 
     for mut request in server.incoming_requests() {
+        let method = request.method().to_string();
+        let url = request.url().to_string();
+        log(&format!("{} {}", method, url));
+
         if request.method() == &Method::Get && request.url() == "/status" {
             let _ = request.respond(Response::from_string("{\"status\":\"ok\"}").with_status_code(200));
         } else if request.method() == &Method::Post && request.url() == "/submit" {
@@ -34,6 +43,7 @@ fn main() {
             match parsed {
                 Ok(data) => {
                     if !valid(&data) {
+                        log("Rejected: invalid input");
                         let _ = request.respond(Response::from_string("Invalid input").with_status_code(400));
                         continue;
                     }
@@ -45,15 +55,18 @@ fn main() {
                         created_at: now(),
                     };
 
+                    log(&format!("New entry from \"{}\"", entry.name));
                     append_entry(entry);
 
                     let _ = request.respond(Response::from_string("OK"));
                 }
                 Err(_) => {
+                    log("Rejected: bad JSON");
                     let _ = request.respond(Response::from_string("Bad JSON").with_status_code(400));
                 }
             }
         } else {
+            log(&format!("Not found: {} {}", method, url));
             let _ = request.respond(Response::from_string("Not Found").with_status_code(404));
         }
     }
