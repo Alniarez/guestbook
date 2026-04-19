@@ -22,7 +22,9 @@ fn main() {
     let server = Server::http("0.0.0.0:50007").unwrap();
 
     for mut request in server.incoming_requests() {
-        if request.method() == &Method::Post && request.url() == "/submit" {
+        if request.method() == &Method::Get && request.url() == "/status" {
+            let _ = request.respond(Response::from_string("{\"status\":\"ok\"}").with_status_code(200));
+        } else if request.method() == &Method::Post && request.url() == "/submit" {
 
             let mut body = String::new();
             request.as_reader().read_to_string(&mut body).unwrap();
