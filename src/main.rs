@@ -33,7 +33,7 @@ fn main() {
 
 
         if request.method() == &Method::Options {
-            let _ = request.respond(cors(Response::empty(204)));
+            let _ = request.respond(cors(Response::from_string("").with_status_code(204)));
         } else if request.method() == &Method::Get && request.url() == "/" {
             let _ = request.respond(cors(Response::from_string("{\"status\":\"ok\"}")));
         } else if request.method() == &Method::Post && request.url() == "/submit" {
