@@ -1,4 +1,4 @@
-use tiny_http::{Server, Response, Method};
+use tiny_http::{Server, Response, Method, Header};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -32,8 +32,10 @@ fn main() {
         log(&format!("{} {}", method, url));
 
 
-        if request.method() == &Method::Get && request.url() == "/" {
-            let _ = request.respond(Response::from_string("{\"status\":\"ok\"}").with_status_code(200));
+        if request.method() == &Method::Options {
+            let _ = request.respond(cors(Response::empty(204)));
+        } else if request.method() == &Method::Get && request.url() == "/" {
+            let _ = request.respond(cors(Response::from_string("{\"status\":\"ok\"}")));
         } else if request.method() == &Method::Post && request.url() == "/submit" {
 
             let mut body = String::new();
@@ -45,7 +47,7 @@ fn main() {
                 Ok(data) => {
                     if !valid(&data) {
                         log("Rejected: invalid input");
-                        let _ = request.respond(Response::from_string("Invalid input").with_status_code(400));
+                        let _ = request.respond(cors(Response::from_string("Invalid input").with_status_code(400)));
                         continue;
                     }
 
@@ -59,11 +61,11 @@ fn main() {
                     log(&format!("New entry from \"{}\"", entry.name));
                     append_entry(entry);
 
-                    let _ = request.respond(Response::from_string("OK"));
+                    let _ = request.respond(cors(Response::from_string("OK")));
                 }
                 Err(_) => {
                     log("Rejected: bad JSON");
-                    let _ = request.respond(Response::from_string("Bad JSON").with_status_code(400));
+                    let _ = request.respond(cors(Response::from_string("Bad JSON").with_status_code(400)));
                 }
             }
         } else {
@@ -73,6 +75,13 @@ fn main() {
     }
 }
 
+
+fn cors<T>(response: Response<T>) -> Response<T> {
+    response
+        .with_header(Header::from_bytes("Access-Control-Allow-Origin", "https://alniarez.de").unwrap())
+        .with_header(Header::from_bytes("Access-Control-Allow-Methods", "POST, GET, OPTIONS").unwrap())
+        .with_header(Header::from_bytes("Access-Control-Allow-Headers", "Content-Type").unwrap())
+}
 
 fn valid(data: &Incoming) -> bool {
     !data.name.is_empty()
