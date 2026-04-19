@@ -78,7 +78,7 @@ fn main() {
 
 fn cors<T: std::io::Read>(response: Response<T>) -> Response<T> {
     response
-        .with_header(Header::from_bytes("Access-Control-Allow-Origin", "https://alniarez.de").unwrap())
+        .with_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap())
         .with_header(Header::from_bytes("Access-Control-Allow-Methods", "POST, GET, OPTIONS").unwrap())
         .with_header(Header::from_bytes("Access-Control-Allow-Headers", "Content-Type").unwrap())
 }
