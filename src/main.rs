@@ -31,7 +31,8 @@ fn main() {
         let url = request.url().to_string();
         log(&format!("{} {}", method, url));
 
-        if request.method() == &Method::Get && request.url() == "/status" {
+
+        if request.method() == &Method::Get && request.url() == "/" {
             let _ = request.respond(Response::from_string("{\"status\":\"ok\"}").with_status_code(200));
         } else if request.method() == &Method::Post && request.url() == "/submit" {
 
