@@ -32,21 +32,27 @@ fn main() {
         log(&format!("{} {}", method, url));
 
 
+        let remote_addr = request.remote_addr().map(|a| a.to_string()).unwrap_or_else(|| "unknown".to_string());
+
         if request.method() == &Method::Options {
+            log(&format!("PREFLIGHT from {}", remote_addr));
             let _ = request.respond(cors(Response::from_string("").with_status_code(204)));
         } else if request.method() == &Method::Get && request.url() == "/" {
+            log(&format!("STATUS from {}", remote_addr));
             let _ = request.respond(cors(Response::from_string("{\"status\":\"ok\"}")));
         } else if request.method() == &Method::Post && request.url() == "/submit" {
+            log(&format!("SUBMIT from {}", remote_addr));
 
             let mut body = String::new();
             request.as_reader().read_to_string(&mut body).unwrap();
+            log(&format!("Body size: {} bytes", body.len()));
 
             let parsed: Result<Incoming, _> = serde_json::from_str(&body);
 
             match parsed {
                 Ok(data) => {
                     if !valid(&data) {
-                        log("Rejected: invalid input");
+                        log(&format!("Rejected invalid input from {} (name_len={}, msg_len={})", remote_addr, data.name.len(), data.message.len()));
                         let _ = request.respond(cors(Response::from_string("Invalid input").with_status_code(400)));
                         continue;
                     }
@@ -58,18 +64,19 @@ fn main() {
                         created_at: now(),
                     };
 
-                    log(&format!("New entry from \"{}\"", entry.name));
+                    log(&format!("New entry id={} name=\"{}\" from {}", entry.id, entry.name, remote_addr));
                     append_entry(entry);
+                    log("Entry saved to pending.json");
 
                     let _ = request.respond(cors(Response::from_string("OK")));
                 }
-                Err(_) => {
-                    log("Rejected: bad JSON");
+                Err(e) => {
+                    log(&format!("Rejected bad JSON from {}: {}", remote_addr, e));
                     let _ = request.respond(cors(Response::from_string("Bad JSON").with_status_code(400)));
                 }
             }
         } else {
-            log(&format!("Not found: {} {}", method, url));
+            log(&format!("Not found: {} {} from {}", method, url, remote_addr));
             let _ = request.respond(Response::from_string("Not Found").with_status_code(404));
         }
     }
