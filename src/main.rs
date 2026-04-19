@@ -19,7 +19,7 @@ struct Entry {
 }
 
 fn main() {
-    let server = Server::http("0.0.0.0:8080").unwrap();
+    let server = Server::http("0.0.0.0:50007").unwrap();
 
     for mut request in server.incoming_requests() {
         if request.method() == &Method::Post && request.url() == "/submit" {
@@ -57,6 +57,7 @@ fn main() {
     }
 }
 
+
 fn valid(data: &Incoming) -> bool {
     !data.name.is_empty()
         && data.name.len() <= 50
@@ -72,7 +73,8 @@ fn now() -> u64 {
 }
 
 fn append_entry(entry: Entry) {
-    let path = "pending.json";
+    let path = "data/pending.json";
+    fs::create_dir_all("data").unwrap();
 
     let mut entries: Vec<Entry> = if let Ok(content) = fs::read_to_string(path) {
         serde_json::from_str(&content).unwrap_or_default()

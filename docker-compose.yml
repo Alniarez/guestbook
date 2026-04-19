@@ -1,0 +1,8 @@
+services:
+  guestbook:
+    build: .
+    ports:
+      - "50007:50007"
+    volumes:
+      - /run/media/sierra/HDD0/nginx/share/data:/app/data
+    restart: unless-stopped
